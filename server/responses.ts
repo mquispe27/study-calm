@@ -1,6 +1,8 @@
-import { Authing } from "./app";
+import { ObjectId } from "mongodb";
+import { Authing, Posting } from "./app";
 import { CommentAuthorNotMatchError, CommentDoc } from "./concepts/commenting";
 import { AlreadyFriendsError, FriendNotFoundError, FriendRequestAlreadyExistsError, FriendRequestDoc, FriendRequestNotFoundError } from "./concepts/friending";
+import { GroupingDoc } from "./concepts/grouping";
 import { PostAuthorNotMatchError, PostDoc } from "./concepts/posting";
 import { Router } from "./framework/router";
 
@@ -44,6 +46,45 @@ export default class Responses {
   static async comments(comments: CommentDoc[]) {
     const authors = await Authing.idsToUsernames(comments.map((comment) => comment.author));
     return comments.map((comment, i) => ({ ...comment, author: authors[i] }));
+  }
+
+  /**
+   * Convert GroupDoc into more readable format for the frontend by converting the content ids into their actual content
+   * (currently strings) as well as founders and members into usernames
+   */
+  static async group(group: GroupingDoc | null) {
+    if (!group) {
+      return group;
+    }
+    const founder = await Authing.getUserById(group.founder);
+    const members = await Authing.idsToUsernames(group.members);
+    const content = await Promise.all(
+      group.content.map(async (contentId) => {
+        const post = await Posting.getById(new ObjectId(contentId));
+        return post;
+      }),
+    );
+    return { ...group, founder: founder.username, members: members };
+  }
+
+  /**
+   * Same as {@link group} but for an array of CommentDoc for improved performance.
+   */
+  static async groups(groups: GroupingDoc[]) {
+    const founders = await Authing.idsToUsernames(groups.map((group) => group.founder));
+    const members = await Promise.all(groups.map((group) => Authing.idsToUsernames(group.members)));
+    const contents = await Promise.all(
+      groups.map(
+        async (group) =>
+          await Promise.all(
+            group.content.map(async (contentId) => {
+              const post = await Posting.getById(new ObjectId(contentId));
+              return post;
+            }),
+          ),
+      ),
+    );
+    return groups.map((group, i) => ({ ...group, founder: founders[i], members: members[i], content: contents[i] }));
   }
 
   /**

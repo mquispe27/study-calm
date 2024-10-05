@@ -36,6 +36,10 @@ export default class PostingConcept {
     return await this.posts.readMany({}, { sort: { _id: -1 } });
   }
 
+  async getById(_id: ObjectId) {
+    return await this.posts.readOne({ _id });
+  }
+
   async getByAuthor(author: ObjectId) {
     return await this.posts.readMany({ author });
   }

@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Commenting, Friending, Posting, Sessioning } from "./app";
+import { Authing, Commenting, Friending, Grouping, Posting, Sessioning } from "./app";
 import { PostOptions } from "./concepts/posting";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
@@ -153,6 +153,70 @@ class Routes {
     const oid = new ObjectId(id);
     await Commenting.assertAuthorIsUser(oid, user);
     return Commenting.delete(oid);
+  }
+
+  @Router.get("/groups")
+  @Router.validate(z.object({ member: z.string().optional() }))
+  async getGroups(member?: string) {
+    let groups;
+    if (member) {
+      const id = (await Authing.getUserByUsername(member))._id;
+      groups = await Grouping.getByMembership(id);
+    } else {
+      groups = await Grouping.getCommunities();
+    }
+    return Responses.groups(groups);
+  }
+
+  @Router.get("/groups/:founder")
+  async getGroupsByFounder(founder: string) {
+    const founderOid = (await Authing.getUserByUsername(founder))._id;
+    let groups = await Grouping.getByFounder(founderOid);
+    return Responses.groups(groups);
+  }
+
+  @Router.post("/groups/")
+  async createGroup(session: SessionDoc, name: string) {
+    const user = Sessioning.getUser(session);
+    const founderOid = new ObjectId(user);
+    const created = await Grouping.create(name, founderOid);
+    return { msg: created.msg, group: await Responses.group(created.group) };
+  }
+
+  @Router.patch("/groups/:id")
+  async addContentToGroup(session: SessionDoc, id: string, contentId: ObjectId) {
+    const user = Sessioning.getUser(session);
+    const groupOid = new ObjectId(id);
+    return await Grouping.addContent(user, groupOid, contentId);
+  }
+
+  @Router.patch("/groups/:id/remove")
+  async removeContentFromGroup(session: SessionDoc, id: string, contentId: ObjectId) {
+    const user = Sessioning.getUser(session);
+    const groupOid = new ObjectId(id);
+    return await Grouping.removeContent(user, groupOid, contentId);
+  }
+
+  @Router.patch("/groups/:id/join")
+  async joinGroup(session: SessionDoc, id: string) {
+    const user = Sessioning.getUser(session);
+    const groupOid = new ObjectId(id);
+    return await Grouping.joinCommunity(user, groupOid);
+  }
+
+  @Router.patch("/groups/:id/leave")
+  async leaveGroup(session: SessionDoc, id: string) {
+    const user = Sessioning.getUser(session);
+    const groupOid = new ObjectId(id);
+    return await Grouping.leaveCommunity(user, groupOid);
+  }
+
+  @Router.delete("/groups/:id")
+  async deleteGroup(session: SessionDoc, id: string) {
+    const user = Sessioning.getUser(session);
+    const groupOid = new ObjectId(id);
+    await Grouping.assertUserIsFounder(user, groupOid);
+    return await Grouping.deleteCommunity(user, groupOid);
   }
 
   @Router.get("/friends")

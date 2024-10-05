@@ -110,6 +110,54 @@ const operations: Operation[] = [
     method: "DELETE",
     fields: { id: "input" },
   },
+  {
+    name: "Get Groups by User (or all groups if empty)",
+    endpoint: "/api/groups",
+    method: "GET",
+    fields: { member: "input" },
+  },
+  {
+    name: "Get Groups by Founder",
+    endpoint: "/api/groups/:founder",
+    method: "GET",
+    fields: { founder: "input" },
+  },
+  {
+    name: "Create Group",
+    endpoint: "/api/groups",
+    method: "POST",
+    fields: { name: "input" },
+  },
+  {
+    name: "Add Content to Group",
+    endpoint: "/api/groups/:id",
+    method: "PATCH",
+    fields: { id: "input", contentId: "input" },
+  },
+  {
+    name: "Remove Content from Group",
+    endpoint: "/api/groups/:id/remove",
+    method: "PATCH",
+    fields: { id: "input", contentId: "input" },
+  },
+  {
+    name: "Join Group",
+    endpoint: "/api/groups/:id/join",
+    method: "PATCH",
+    fields: { id: "input" },
+  },
+  {
+    name: "Leave Group",
+    endpoint: "/api/groups/:id/leave",
+    method: "PATCH",
+    fields: { id: "input" },
+  },
+  {
+    name: "Delete Group",
+    endpoint: "/api/groups/:id",
+    method: "DELETE",
+    fields: { id: "input" },
+  },
   //
   // ...
   //
