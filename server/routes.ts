@@ -265,6 +265,61 @@ class Routes {
     const fromOid = (await Authing.getUserByUsername(from))._id;
     return await Friending.rejectRequest(fromOid, user);
   }
+
+  @Router.put("/matching/request")
+  async requestPartner(session: SessionDoc) {
+    // TODO: Implement this route
+  }
+
+  @Router.put("/matching/accept/:from")
+  async acceptPartner(session: SessionDoc, from: string) {
+    // TODO: Implement this route
+  }
+
+  @Router.put("/matching/shareGoals")
+  async shareGoals(session: SessionDoc, goals: string[]) {
+    // TODO: Implement this route
+  }
+
+  @Router.put("/matching/message/:to")
+  async sendMessage(session: SessionDoc, to: string, message: string) {
+    // TODO: Implement this route (stretch)
+  }
+
+  @Router.post("scheduling/:id")
+  async createEvent(session: SessionDoc, group: ObjectId, time: string, location: string, id: string, eventName: string) {
+    // TODO: Implement this route
+  }
+
+  @Router.patch("scheduling/:id/join")
+  async joinEvent(session: SessionDoc, id: string) {
+    // TODO: Implement this route
+  }
+
+  @Router.patch("scheduling/:id/leave")
+  async leaveEvent(session: SessionDoc, id: string) {
+    // TODO: Implement this route
+  }
+
+  @Router.delete("scheduling/:id")
+  async deleteEvent(session: SessionDoc, id: string) {
+    // TODO: Implement this route
+  }
+
+  @Router.patch("scheduling/:id/voteTime")
+  async voteTime(session: SessionDoc, id: string, time: string) {
+    // TODO: Implement this route
+  }
+
+  @Router.patch("scheduling/:id/voteLocation")
+  async voteLocation(session: SessionDoc, id: string, location: string) {
+    // TODO: Implement this route
+  }
+
+  @Router.put("scheduling/:id/notify")
+  async notifyUsers(session: SessionDoc, id: string) {
+    // TODO: Implement this route (stretch)
+  }
 }
 
 /** The web app. */
