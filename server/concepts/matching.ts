@@ -16,7 +16,7 @@ export interface UserMatchStatusDoc extends BaseDoc {
 }
 
 /**
- * concept: Matching [User, User]
+ * concept: Matching [User, Goal, Match]
  */
 export default class MatchingConcept {
   public readonly matches: DocCollection<MatchingDoc>;
