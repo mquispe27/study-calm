@@ -3,6 +3,7 @@ import { Authing, Posting } from "./app";
 import { CommentAuthorNotMatchError, CommentDoc } from "./concepts/commenting";
 import { AlreadyFriendsError, FriendNotFoundError, FriendRequestAlreadyExistsError, FriendRequestDoc, FriendRequestNotFoundError } from "./concepts/friending";
 import { GroupingDoc } from "./concepts/grouping";
+import { MatchingDoc, UserMatchStatusDoc } from "./concepts/matching";
 import { PostAuthorNotMatchError, PostDoc } from "./concepts/posting";
 import { Router } from "./framework/router";
 
@@ -64,11 +65,11 @@ export default class Responses {
         return post;
       }),
     );
-    return { ...group, founder: founder.username, members: members };
+    return { ...group, founder: founder.username, members: members, content: content };
   }
 
   /**
-   * Same as {@link group} but for an array of CommentDoc for improved performance.
+   * Same as {@link group} but for an array of GroupingDoc for improved performance.
    */
   static async groups(groups: GroupingDoc[]) {
     const founders = await Authing.idsToUsernames(groups.map((group) => group.founder));
@@ -85,6 +86,35 @@ export default class Responses {
       ),
     );
     return groups.map((group, i) => ({ ...group, founder: founders[i], members: members[i], content: contents[i] }));
+  }
+
+  /**
+   *  Convert MatchingDoc into more readable format for the frontend by converting the ids into usernames.
+   */
+  static async match(match: MatchingDoc | null) {
+    if (!match) {
+      return match;
+    }
+    const user1 = await Authing.getUserById(match.user1);
+    const user2 = await Authing.getUserById(match.user2);
+    return { ...match, user1: user1.username, user2: user2.username };
+  }
+
+  /**
+   * Same as {@link match} but for an array of MatchingDoc for improved performance.
+   */
+  static async matches(matches: MatchingDoc[]) {
+    const user1s = await Authing.idsToUsernames(matches.map((match) => match.user1));
+    const user2s = await Authing.idsToUsernames(matches.map((match) => match.user2));
+    return matches.map((match, i) => ({ ...match, user1: user1s[i], user2: user2s[i] }));
+  }
+
+  /**
+   * Gets usernames for users in unmatched pool
+   */
+  static async unmatchedPool(pool: UserMatchStatusDoc[]) {
+    const usernames = await Authing.idsToUsernames(pool.map((user) => user.user));
+    return pool.map((user, i) => ({ ...user, user: usernames[i] }));
   }
 
   /**

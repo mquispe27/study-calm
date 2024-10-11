@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Commenting, Friending, Grouping, Posting, Sessioning } from "./app";
+import { Authing, Commenting, Friending, Grouping, Matching, Posting, Sessioning } from "./app";
 import { PostOptions } from "./concepts/posting";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
@@ -266,19 +266,77 @@ class Routes {
     return await Friending.rejectRequest(fromOid, user);
   }
 
-  @Router.put("/matching/request")
+  @Router.post("/matches/request")
   async requestPartner(session: SessionDoc) {
-    // TODO: Implement this route
+    const user = Sessioning.getUser(session);
+    return await Matching.addUnmatchedUser(user);
   }
 
-  @Router.put("/matching/accept/:from")
-  async acceptPartner(session: SessionDoc, from: string) {
-    // TODO: Implement this route
+  @Router.get("/matches/")
+  async getMatchOrStatus(session: SessionDoc) {
+    const user = Sessioning.getUser(session);
+    const status = await Matching.getUserStatus(user);
+    const other = await Matching.getMatch(user);
+    if (status.status === "matched") {
+      return { msg: "You are matched with " + (await Authing.getUserById(other)).username + "!" };
+    } else {
+      return { msg: "You are currently in the matching pool." };
+    }
   }
 
-  @Router.put("/matching/shareGoals")
-  async shareGoals(session: SessionDoc, goals: string[]) {
-    // TODO: Implement this route
+  @Router.get("/matches/all")
+  async getAllMatches() {
+    const matches = await Matching.getAllMatches();
+    return Responses.matches(matches);
+  }
+
+  @Router.get("/matches/unmatched")
+  async getUnmatchedPool() {
+    const pool = await Matching.getUnmatchedPool();
+    return Responses.unmatchedPool(pool);
+  }
+
+  @Router.get("/matches/goal")
+  async getGoals(session: SessionDoc) {
+    const user = Sessioning.getUser(session);
+    return await Matching.getUserGoals(user);
+  }
+
+  @Router.get("/matches/goal/partner")
+  async getPartnerGoals(session: SessionDoc) {
+    const user = Sessioning.getUser(session);
+    return await Matching.getPartnerGoals(user);
+  }
+
+  @Router.delete("/matches/")
+  async removeMatch(session: SessionDoc) {
+    const user = Sessioning.getUser(session);
+    const other = await Matching.getMatch(user);
+    return await Matching.removeMatch(user, other);
+  }
+
+  @Router.delete("/matches/user")
+  async removeUserFromPool(session: SessionDoc) {
+    const user = Sessioning.getUser(session);
+    return await Matching.removeUnmatchedUser(user);
+  }
+
+  @Router.put("/matches/goal")
+  async shareGoal(session: SessionDoc, goal: string) {
+    const user = Sessioning.getUser(session);
+    return await Matching.addGoal(user, goal);
+  }
+
+  @Router.patch("/matches/goal")
+  async updateGoal(session: SessionDoc, oldGoal: string, newGoal: string) {
+    const user = Sessioning.getUser(session);
+    return await Matching.updateGoal(user, oldGoal, newGoal);
+  }
+
+  @Router.delete("/matches/goal")
+  async removeGoal(session: SessionDoc, goal: string) {
+    const user = Sessioning.getUser(session);
+    return await Matching.removeGoal(user, goal);
   }
 
   @Router.put("/matching/message/:to")

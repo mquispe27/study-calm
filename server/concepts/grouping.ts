@@ -109,7 +109,7 @@ export default class GroupingConcept {
     }
   }
 
-  async assertUserIsNotFounder(user: ObjectId, _id: ObjectId) {
+  private async assertUserIsNotFounder(user: ObjectId, _id: ObjectId) {
     const groupDoc = await this.groups.readOne({ _id });
     if (!groupDoc) {
       throw new NotFoundError("Group does not exist!");
@@ -119,7 +119,7 @@ export default class GroupingConcept {
     }
   }
 
-  async assertUserIsInGroup(user: ObjectId, _id: ObjectId) {
+  private async assertUserIsInGroup(user: ObjectId, _id: ObjectId) {
     const groupDoc = await this.groups.readOne({ _id });
     if (!groupDoc) {
       throw new NotFoundError("Group does not exist!");
@@ -128,7 +128,7 @@ export default class GroupingConcept {
       throw new NotFoundError("User is not in group!");
     }
   }
-  async assertUserIsNotInGroup(user: ObjectId, _id: ObjectId) {
+  private async assertUserIsNotInGroup(user: ObjectId, _id: ObjectId) {
     const groupDoc = await this.groups.readOne({ _id });
     console.log(groupDoc);
     if (!groupDoc) {
@@ -139,7 +139,7 @@ export default class GroupingConcept {
     }
   }
 
-  async assertContentDoesNotExistInCommunity(contentId: ObjectId, communityId: ObjectId) {
+  private async assertContentDoesNotExistInCommunity(contentId: ObjectId, communityId: ObjectId) {
     const community = await this.groups.readOne({ _id: communityId });
     if (!community) {
       throw new NotFoundError("Community does not exist!");
@@ -149,7 +149,7 @@ export default class GroupingConcept {
     }
   }
 
-  async assertContentExistsInCommunity(contentId: ObjectId, communityId: ObjectId) {
+  private async assertContentExistsInCommunity(contentId: ObjectId, communityId: ObjectId) {
     const community = await this.groups.readOne({ _id: communityId });
     if (!community) {
       throw new NotFoundError("Community does not exist!");

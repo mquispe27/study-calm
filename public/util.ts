@@ -158,6 +158,72 @@ const operations: Operation[] = [
     method: "DELETE",
     fields: { id: "input" },
   },
+  {
+    name: "Request Accountability Partner",
+    endpoint: "/api/matches/request",
+    method: "POST",
+    fields: {},
+  },
+  {
+    name: "Get Matching Status",
+    endpoint: "/api/matches",
+    method: "GET",
+    fields: {},
+  },
+  {
+    name: "Get Matched Users",
+    endpoint: "/api/matches/all",
+    method: "GET",
+    fields: {},
+  },
+  {
+    name: "Get Unmatched Users",
+    endpoint: "/api/matches/unmatched",
+    method: "GET",
+    fields: {},
+  },
+  {
+    name: "Delete Match",
+    endpoint: "/api/matches",
+    method: "DELETE",
+    fields: {},
+  },
+  {
+    name: "Remove User from Matching Pool",
+    endpoint: "/api/matches/user",
+    method: "DELETE",
+    fields: {},
+  },
+  {
+    name: "Share Goal with Match",
+    endpoint: "/api/matches/goal",
+    method: "PUT",
+    fields: { goal: "input" },
+  },
+  {
+    name: "Update Goal",
+    endpoint: "/api/matches/goal",
+    method: "PATCH",
+    fields: { oldGoal: "input", newGoal: "input" },
+  },
+  {
+    name: "Remove Goal",
+    endpoint: "/api/matches/goal",
+    method: "DELETE",
+    fields: { goal: "input" },
+  },
+  {
+    name: "Get Goals",
+    endpoint: "/api/matches/goal",
+    method: "GET",
+    fields: {},
+  },
+  {
+    name: "Get Partner Goals",
+    endpoint: "/api/matches/goal/partner",
+    method: "GET",
+    fields: {},
+  },
   //
   // ...
   //
