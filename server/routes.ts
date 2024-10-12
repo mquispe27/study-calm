@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Commenting, Friending, Grouping, Matching, Posting, Sessioning } from "./app";
+import { Authing, Commenting, Friending, Grouping, Matching, Posting, Scheduling, Sessioning } from "./app";
 import { PostOptions } from "./concepts/posting";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
@@ -339,47 +339,224 @@ class Routes {
     return await Matching.removeGoal(user, goal);
   }
 
-  @Router.put("/matching/message/:to")
-  async sendMessage(session: SessionDoc, to: string, message: string) {
-    // TODO: Implement this route (stretch)
+  @Router.get("/events")
+  async getEvents() {
+    const events = await Scheduling.getEvents();
+    if (events) {
+      return {
+        events: await Promise.all(
+          events.map(async (event) => {
+            if (event.attendees) {
+              return {
+                ...event,
+                attendees: await Authing.idsToUsernames(event.attendees),
+              };
+            } else return event;
+          }),
+        ),
+      };
+    } else return events;
   }
 
-  @Router.post("scheduling/:id")
-  async createEvent(session: SessionDoc, group: ObjectId, time: string, location: string, id: string, eventName: string) {
-    // TODO: Implement this route
+  @Router.get("/events/:id")
+  async getEvent(id: string) {
+    const event = await Scheduling.getEvent(new ObjectId(id));
+    if (event?.attendees) {
+      return {
+        ...event,
+        attendees: await Authing.idsToUsernames(event.attendees),
+      };
+    } else return event;
   }
 
-  @Router.patch("scheduling/:id/join")
+  @Router.post("/events")
+  async createEvent(session: SessionDoc, group: string, time: string, location: string, eventName: string) {
+    const groupId = new ObjectId(group);
+    const user = Sessioning.getUser(session);
+    return await Scheduling.createEvent(user, eventName, groupId, new Date(time), location);
+  }
+
+  @Router.patch("/events/:id/join")
   async joinEvent(session: SessionDoc, id: string) {
-    // TODO: Implement this route
+    const user = Sessioning.getUser(session);
+    return await Scheduling.addAttendee(new ObjectId(id), user);
   }
 
-  @Router.patch("scheduling/:id/leave")
+  @Router.patch("/events/:id/leave")
   async leaveEvent(session: SessionDoc, id: string) {
-    // TODO: Implement this route
+    const user = Sessioning.getUser(session);
+    const timeVote = await Scheduling.getUserTimeVote(new ObjectId(id), user);
+    // clear user's votes before removing them from the event
+    if (timeVote) {
+      await Scheduling.unvoteOnTime(new ObjectId(id), new Date(timeVote), user);
+    }
+    const locationVote = await Scheduling.getUserLocationVote(new ObjectId(id), user);
+    if (locationVote) {
+      await Scheduling.unvoteOnLocation(new ObjectId(id), locationVote, user);
+    }
+    return await Scheduling.removeAttendee(new ObjectId(id), user);
   }
 
-  @Router.delete("scheduling/:id")
+  @Router.delete("/events/:id")
   async deleteEvent(session: SessionDoc, id: string) {
-    // TODO: Implement this route
+    return await Scheduling.deleteEvent(new ObjectId(id));
   }
 
-  @Router.patch("scheduling/:id/voteTime")
+  @Router.patch("/events/:id/name")
+  async updateEventName(session: SessionDoc, id: string, name: string) {
+    return await Scheduling.updateName(new ObjectId(id), name);
+  }
+
+  @Router.post("/events/:id/time")
+  async addPossibleTime(session: SessionDoc, id: string, time: string) {
+    const user = Sessioning.getUser(session);
+    await Scheduling.addPossibleTime(new ObjectId(id), new Date(time));
+    const currentVote = await Scheduling.getUserTimeVote(new ObjectId(id), user);
+    if (currentVote) {
+      // Clear the user's current vote to set a new one
+      await Scheduling.unvoteOnTime(new ObjectId(id), new Date(currentVote), user);
+    }
+    const response = await Scheduling.voteOnTime(new ObjectId(id), new Date(time), user);
+    const newBestTime = await Scheduling.calculateBestTime(new ObjectId(id));
+    if (newBestTime.bestTime) {
+      await Scheduling.setBestTime(new ObjectId(id), new Date(newBestTime.bestTime));
+      return { response, bestTime: newBestTime.bestTime };
+    } else {
+      return response;
+    }
+  }
+
+  @Router.delete("/events/:id/time")
+  async removePossibleTime(session: SessionDoc, id: string, time: string) {
+    const user = Sessioning.getUser(session);
+    await Scheduling.unvoteOnTime(new ObjectId(id), new Date(time), user);
+    const response = await Scheduling.removePossibleTime(new ObjectId(id), new Date(time));
+    const newBestTime = await Scheduling.calculateBestTime(new ObjectId(id));
+    if (newBestTime.bestTime) {
+      await Scheduling.setBestTime(new ObjectId(id), new Date(newBestTime.bestTime));
+      return { response, bestTime: newBestTime.bestTime };
+    } else {
+      return response;
+    }
+  }
+
+  @Router.post("/events/:id/time/vote")
   async voteTime(session: SessionDoc, id: string, time: string) {
-    // TODO: Implement this route
+    const user = Sessioning.getUser(session);
+    const vote = await Scheduling.getUserTimeVote(new ObjectId(id), user);
+    if (vote) {
+      // Clear the user's current vote to set a new one
+      await Scheduling.unvoteOnTime(new ObjectId(id), new Date(vote), user);
+    }
+    const response = await Scheduling.voteOnTime(new ObjectId(id), new Date(time), user);
+    const newBestTime = await Scheduling.calculateBestTime(new ObjectId(id));
+    if (newBestTime.bestTime) {
+      await Scheduling.setBestTime(new ObjectId(id), new Date(newBestTime.bestTime));
+      return { response, bestTime: newBestTime.bestTime };
+    } else {
+      return response;
+    }
   }
 
-  @Router.patch("scheduling/:id/voteLocation")
+  @Router.delete("/events/:id/time/vote")
+  async unvoteTime(session: SessionDoc, id: string, time: string) {
+    const user = Sessioning.getUser(session);
+    const response = await Scheduling.unvoteOnTime(new ObjectId(id), new Date(time), user);
+    const newBestTime = await Scheduling.calculateBestTime(new ObjectId(id));
+    if (newBestTime.bestTime) {
+      await Scheduling.setBestTime(new ObjectId(id), new Date(newBestTime.bestTime));
+      return { response, bestTime: newBestTime.bestTime };
+    } else {
+      return response;
+    }
+  }
+
+  @Router.post("/events/:id/location")
+  async addPossibleLocation(session: SessionDoc, id: string, location: string) {
+    const user = Sessioning.getUser(session);
+    await Scheduling.addPossibleLocation(new ObjectId(id), location);
+    const currentVote = await Scheduling.getUserLocationVote(new ObjectId(id), user);
+    if (currentVote) {
+      // Clear the user's current vote to set a new one
+      await Scheduling.unvoteOnLocation(new ObjectId(id), currentVote, user);
+    }
+    const response = await Scheduling.voteOnLocation(new ObjectId(id), location, user);
+    const newBestLocation = await Scheduling.calculateBestLocation(new ObjectId(id));
+    if (newBestLocation.bestLocation) {
+      await Scheduling.setBestLocation(new ObjectId(id), newBestLocation.bestLocation);
+      return { response, bestLocation: newBestLocation.bestLocation };
+    } else {
+      return response;
+    }
+  }
+
+  @Router.post("/events/:id/location/vote")
   async voteLocation(session: SessionDoc, id: string, location: string) {
-    // TODO: Implement this route
+    const user = Sessioning.getUser(session);
+    const currentVote = await Scheduling.getUserLocationVote(new ObjectId(id), user);
+    if (currentVote) {
+      // Clear the user's current vote to set a new one
+      await Scheduling.unvoteOnLocation(new ObjectId(id), currentVote, user);
+    }
+    const voteMessage = await Scheduling.voteOnLocation(new ObjectId(id), location, user);
+    const newBestLocation = await Scheduling.calculateBestLocation(new ObjectId(id));
+    if (newBestLocation.bestLocation) {
+      await Scheduling.setBestLocation(new ObjectId(id), newBestLocation.bestLocation);
+      return { voteMessage, bestLocation: newBestLocation.bestLocation };
+    } else {
+      return voteMessage;
+    }
   }
 
-  @Router.put("scheduling/:id/notify")
-  async notifyUsers(session: SessionDoc, id: string) {
-    // TODO: Implement this route (stretch)
+  @Router.delete("/events/:id/location/vote")
+  async unvoteLocation(session: SessionDoc, id: string, location: string) {
+    const user = Sessioning.getUser(session);
+    const unvoteMessage = await Scheduling.unvoteOnLocation(new ObjectId(id), location, user);
+    const newBestLocation = await Scheduling.calculateBestLocation(new ObjectId(id));
+    if (newBestLocation.bestLocation) {
+      await Scheduling.setBestLocation(new ObjectId(id), newBestLocation.bestLocation);
+      return { unvoteMessage, bestLocation: newBestLocation.bestLocation };
+    } else {
+      return unvoteMessage;
+    }
+  }
+
+  @Router.delete("/events/:id/location")
+  async removePossibleLocation(session: SessionDoc, id: string, location: string) {
+    const user = Sessioning.getUser(session);
+    await Scheduling.unvoteOnLocation(new ObjectId(id), location, user);
+    const removeMessage = await Scheduling.removePossibleLocation(new ObjectId(id), location);
+    const newBestLocation = await Scheduling.calculateBestLocation(new ObjectId(id));
+    if (newBestLocation.bestLocation) {
+      await Scheduling.setBestLocation(new ObjectId(id), newBestLocation.bestLocation);
+      return { removeMessage, bestLocation: newBestLocation.bestLocation };
+    } else {
+      return removeMessage;
+    }
+  }
+
+  @Router.get("/events/:id/votes")
+  async getUserVotes(session: SessionDoc, id: string) {
+    const user = Sessioning.getUser(session);
+    return {
+      time: await Scheduling.getUserTimeVote(new ObjectId(id), user),
+      location: await Scheduling.getUserLocationVote(new ObjectId(id), user),
+    };
+  }
+
+  @Router.get("/events/:id/attendees")
+  async getAttendees(id: string) {
+    return await Scheduling.getAttendees(new ObjectId(id));
+  }
+
+  @Router.get("/events/:id/allVotes")
+  async getAllVotes(id: string) {
+    return {
+      times: await Scheduling.getAllTimeVotes(new ObjectId(id)),
+      locations: await Scheduling.getAllLocationVotes(new ObjectId(id)),
+    };
   }
 }
-
 /** The web app. */
 export const app = new Routes();
 

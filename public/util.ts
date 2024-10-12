@@ -224,9 +224,114 @@ const operations: Operation[] = [
     method: "GET",
     fields: {},
   },
-  //
-  // ...
-  //
+  {
+    name: "Get Events",
+    endpoint: "/api/events",
+    method: "GET",
+    fields: {},
+  },
+  {
+    name: "Get Event",
+    endpoint: "/api/events/:id",
+    method: "GET",
+    fields: { id: "input" },
+  },
+  {
+    name: "Create Event",
+    endpoint: "/api/events",
+    method: "POST",
+    fields: { eventName: "input", group: "input", time: "input", location: "input" },
+  },
+  {
+    name: "Join Event",
+    endpoint: "/api/events/:id/join",
+    method: "PATCH",
+    fields: { id: "input" },
+  },
+  {
+    name: "Leave Event",
+    endpoint: "/api/events/:id/leave",
+    method: "PATCH",
+    fields: { id: "input" },
+  },
+  {
+    name: "Delete Event",
+    endpoint: "/api/events/:id",
+    method: "DELETE",
+    fields: { id: "input" },
+  },
+  {
+    name: "Update Name",
+    endpoint: "/api/events/:id/name",
+    method: "PATCH",
+    fields: { id: "input", name: "input" },
+  },
+  {
+    name: "Vote on Time",
+    endpoint: "/api/events/:id/time/vote",
+    method: "POST",
+    fields: { id: "input", time: "input" },
+  },
+  {
+    name: "Unvote on Time",
+    endpoint: "/api/events/:id/time/vote",
+    method: "DELETE",
+    fields: { id: "input", time: "input" },
+  },
+  {
+    name: "Unvote on Location",
+    endpoint: "/api/events/:id/location/vote",
+    method: "DELETE",
+    fields: { id: "input", location: "input" },
+  },
+  {
+    name: "Vote on Location",
+    endpoint: "/api/events/:id/location/vote",
+    method: "POST",
+    fields: { id: "input", location: "input" },
+  },
+  {
+    name: "Add Possible Time",
+    endpoint: "/api/events/:id/time",
+    method: "POST",
+    fields: { id: "input", time: "input" },
+  },
+  {
+    name: "Remove Possible Time",
+    endpoint: "/api/events/:id/time",
+    method: "DELETE",
+    fields: { id: "input", time: "input" },
+  },
+  {
+    name: "Add Possible Location",
+    endpoint: "/api/events/:id/location",
+    method: "POST",
+    fields: { id: "input", location: "input" },
+  },
+  {
+    name: "Remove Possible Location",
+    endpoint: "/api/events/:id/location",
+    method: "DELETE",
+    fields: { id: "input", location: "input" },
+  },
+  {
+    name: "Get User Votes",
+    endpoint: "/api/events/:id/votes",
+    method: "GET",
+    fields: { id: "input", user: "input" },
+  },
+  {
+    name: "Get Attendees",
+    endpoint: "/api/events/:id/attendees",
+    method: "GET",
+    fields: { id: "input" },
+  },
+  {
+    name: "Get All Votes",
+    endpoint: "/api/events/:id/allVotes",
+    method: "GET",
+    fields: { id: "input" },
+  },
 ];
 
 /*

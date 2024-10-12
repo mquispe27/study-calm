@@ -58,9 +58,6 @@ export default class GroupingConcept {
 
   async joinCommunity(user: ObjectId, communityId: ObjectId) {
     await this.assertUserIsNotInGroup(user, communityId);
-    console.log("User is not in group");
-    console.log(user);
-    console.log(communityId);
     await this.groups.collection.updateOne({ _id: communityId }, { $addToSet: { members: user } });
     return { msg: "Successfully joined the community!" };
   }
@@ -130,7 +127,6 @@ export default class GroupingConcept {
   }
   private async assertUserIsNotInGroup(user: ObjectId, _id: ObjectId) {
     const groupDoc = await this.groups.readOne({ _id });
-    console.log(groupDoc);
     if (!groupDoc) {
       throw new NotFoundError("Group does not exist!");
     }

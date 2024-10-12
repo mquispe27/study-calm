@@ -132,6 +132,9 @@ export default class MatchingConcept {
     if (match === null) {
       throw new MatchNotFoundError(user, user);
     }
+    if (goal === "") {
+      throw new NotAllowedError("Goal cannot be empty!");
+    }
     const userGoals = match.user1.toString() === user.toString() ? "user1Goals" : "user2Goals";
     await this.matches.collection.updateOne({ _id: match._id }, { $addToSet: { [userGoals]: goal } });
     return { msg: "Goal added!" };
@@ -144,6 +147,9 @@ export default class MatchingConcept {
     });
     if (match === null) {
       throw new MatchNotFoundError(user, user);
+    }
+    if (newGoal === "") {
+      throw new NotAllowedError("Goal cannot be empty!");
     }
     const userGoals = match.user1.toString() === user.toString() ? "user1Goals" : "user2Goals";
     await this.matches.collection.updateOne({ _id: match._id }, { $pull: { [userGoals]: oldGoal } });
